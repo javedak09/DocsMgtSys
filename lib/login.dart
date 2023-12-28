@@ -1,3 +1,4 @@
+import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:docsmgtsys/CVars.dart';
@@ -213,7 +214,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
         .getLogin(nameController.text, passwordController.text);
 
     if (allRows.length <= 0) {
-      showAlertDialog(context);
+      CustomAlertDialog.ShowAlertDialog(context, "User does not exist");
       FocusScope.of(context).requestFocus(focusNode);
     } else {
       Navigator.push(
@@ -222,32 +223,6 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     }
   }
 
-  showAlertDialog(BuildContext context) {
-    // set up the buttons
-    Widget okButton = TextButton(
-      child: Text("OK"),
-      onPressed: () {
-        Navigator.of(context, rootNavigator: true).pop();
-      },
-    );
-
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Alert Dialog"),
-      content: Text("User id does not exist or user status is inactive"),
-      actions: [
-        okButton,
-      ],
-    );
-
-    // show the dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
-  }
 
   void _clearField() {
     nameController.text = "";

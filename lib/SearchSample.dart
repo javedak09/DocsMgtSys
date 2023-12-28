@@ -1,3 +1,4 @@
+import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:docsmgtsys/DBProvider.dart';
 import 'package:docsmgtsys/SampleRegister.dart';
@@ -131,10 +132,10 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
   void _searchSampleID() async {
     final allRows =
-        await SampleController().getSampleInfo(SampleIDController.text);
+    await SampleController().getSampleInfo(SampleIDController.text);
 
     if (allRows.length <= 0) {
-      showAlertDialog(context);
+      CustomAlertDialog.ShowAlertDialog(context, "Sample does not exist");
       FocusScope.of(context).requestFocus(focusNode);
     } else {
       Database db = await DBProvider().initDb();
@@ -143,32 +144,6 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     }
   }
 
-  showAlertDialog(BuildContext context) {
-    // set up the buttons
-    Widget okButton = TextButton(
-      child: Text("OK"),
-      onPressed: () {
-        Navigator.of(context, rootNavigator: true).pop();
-      },
-    );
-
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Alert Dialog"),
-      content: Text("Sample does not exist"),
-      actions: [
-        okButton,
-      ],
-    );
-
-    // show the dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
-  }
 
   void _clearField() {
     formKey.currentState!.reset();

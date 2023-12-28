@@ -1,32 +1,63 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:docsmgtsys/DBProvider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:ftpconnect/ftpconnect.dart';
 import 'package:http/http.dart' as http;
 import 'package:sqflite/sqflite.dart';
-
-import 'Model/SampleEntryModel.dart';
+import 'package:xml/xml.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class syncImages {
-  getSampleSync() async {
+  syncSampleEntryModel(BuildContext context) async {
     try {
       Database db = await DBProvider().initDb();
-      List lst = await db.query("sampleentry");
-      //List<SampleEntryModel>? lst1 = SampleEntryModel.fromJsonList(lst);
+      List<Map<String, dynamic>> lst = await db.query("sampleentry");
 
-      var response =
-          Dio().post("http://CLS-PAE-FP60088/webapi/Home/SyncData", data: lst);
+      //Map<String, dynamic> lst1 = SampleEntryModel().toMap();
 
-      /*var formData = FormData.fromMap({
-      "id": lst1?[0].id,
-      "projectid": lst1?[0].projectid,
-      "sampleid": lst1?[0].sampleid,
-    });*/
+      var formData = FormData.fromMap({"sampleEntrymodel": lst});
+
+      /*var response = Dio().post(
+          "http://CLS-PAE-FP60088:81/webapi/Home/SyncData",
+          data: formData);*/
+
+      syncSampleEntryFiles(context);
     } catch (e) {
       print(e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
+    }
+  }
+
+  syncSampleEntryFiles(BuildContext context) async {
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+      Future<String> str = rootBundle.loadString("assets/config.xml");
+      print(str);
+
+      final config_fl = File("assets/config.xml");
+      final document = XmlDocument.parse(config_fl.readAsStringSync());
+      final dataNodes = document.findElements('data').first;
+      final node = dataNodes.findElements('userid');
+
+// Extract employee data using a loop
+      for (final node_loop in node) {
+        final name = node_loop.findElements('userid').first.text;
+        final salary = node_loop.findElements('paswd').first.text;
+      }
+
+      FTPConnect ftpConnect = new FTPConnect("CLS-PAE-FP60088",
+          user: "support.jk", pass: "Dellpro.1903", port: 21);
+      await ftpConnect.connect();
+      // await ftpConnect.changeDirectory("webapi");
+      await ftpConnect.uploadFile(File("\\0\\sdcard\\DCIM\\docsmgtsys\\"));
+      await ftpConnect.disconnect();
+    } catch (e) {
+      print(e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
     }
   }
 
@@ -43,13 +74,14 @@ class syncImages {
         await http.Response.fromStream(await request.send());
      */
 
-    final response = http
-        .post(Uri.parse("http://cls-pae-fp60088/webapi/Privacy"), body: lst);
+    final response = http.post(
+        Uri.parse("http://cls-pae-fp60088:81/webapi/Home/SyncData"),
+        body: lst);
   }
 
-  final String endPoint = 'http://10.0.2.2:8000/analyze';
+  //final String endPoint = 'http://10.0.2.2:8000/analyze';
 
-  void _upload(File file) async {
+  /*void _upload(File file) async {
     String fileName = file.path.split('/').last;
     print(fileName);
 
@@ -67,7 +99,7 @@ class syncImages {
       var testData = jsonResponse['histogram_counts'].cast<double>();
       var averageGrindSize = jsonResponse['average_particle_size'];
     }).catchError((error) => print(error));
-  }
+  }*/
 
   getHttp() async {
     try {

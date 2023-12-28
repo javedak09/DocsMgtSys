@@ -1,10 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
-
-//import 'package:dio/dio.dart';
 import 'package:dio/dio.dart';
 import 'package:docsmgtsys/ViewFiles.dart';
-import 'package:docsmgtsys/test.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:docsmgtsys/DBProvider.dart';
@@ -16,12 +12,12 @@ import 'package:docsmgtsys/SampleController.dart';
 import 'package:docsmgtsys/SearchSample.dart';
 import 'package:docsmgtsys/login.dart';
 import 'package:docsmgtsys/syncImages.dart';
-import 'package:http_parser/http_parser.dart';
+import 'package:ftpconnect/ftpconnect.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:http/http.dart' as http;
-import 'package:path/path.dart' as Path;
 import 'package:path_provider/path_provider.dart';
 import 'package:dropdown_search/dropdown_search.dart';
+import 'CustomAlertDialog.dart';
 
 /*void main() {
   runApp(MyApp());
@@ -117,7 +113,8 @@ class HomePage extends State<HomePageState> {
     // show the results: print all rows in the db
     print(await db.query("sampleentry"));
 
-    showAlertDialog(context, "Record saved successfully");
+    //showAlertDialog(context, "Record saved successfully");
+    CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
   }
 
   _getData() async {
@@ -150,34 +147,6 @@ class HomePage extends State<HomePageState> {
         alignment: Alignment.center,
         child:
             Text(title, style: TextStyle(color: Colors.white, fontSize: 20)));
-  }
-
-  showAlertDialog(BuildContext context, String msg) {
-    // set up the buttons
-    Widget okButton = TextButton(
-      child: Text("OK"),
-      onPressed: () {
-        _clearField();
-        Navigator.of(context, rootNavigator: true).pop();
-      },
-    );
-
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Alert Dialog"),
-      content: Text(msg),
-      actions: [
-        okButton,
-      ],
-    );
-
-    // show the dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
   }
 
   void _clearField() {
@@ -293,7 +262,7 @@ class HomePage extends State<HomePageState> {
         }*/
       } else {}
     } catch (e) {
-      showAlertDialog(context, e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
       print(e.toString());
     }
   }
@@ -343,7 +312,7 @@ class HomePage extends State<HomePageState> {
         }*/
       }
     } catch (e) {
-      showAlertDialog(context, e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
       print(e.toString());
     }
   }
@@ -432,7 +401,7 @@ class HomePage extends State<HomePageState> {
         }
       }
     } catch (e) {
-      showAlertDialog(context, e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
       print(e.toString());
     }
   }
@@ -470,7 +439,7 @@ class HomePage extends State<HomePageState> {
         }
       }
     } catch (e) {
-      showAlertDialog(context, e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
       print(e.toString());
     }
   }
@@ -534,9 +503,10 @@ class HomePage extends State<HomePageState> {
   void syncData() async {
     final dio = Dio();
 
-    String fileName = controller_imgpath.text.split('/').last;
+    try {
+      String fileName = controller_imgpath.text.split('/').last;
 
-    /*FormData formData = FormData.fromMap({
+      /*FormData formData = FormData.fromMap({
       "image-param-name": await MultipartFile.fromFile(
         controller_imgpath.text,
         filename: fileName,
@@ -544,24 +514,32 @@ class HomePage extends State<HomePageState> {
       ),
     });*/
 
-    FormData formData = FormData.fromMap({
-      "tabdataid": "1",
-      "projectid": controller_projectID.text,
-      "sampleid": controller_sampleID.text,
-      "img_file":
-          await MultipartFile.fromFile(UploadFilePath!, filename: fileName),
-    });
+      FormData formData = FormData.fromMap({
+        "tabdataid": "1",
+        "projectid": controller_projectID.text,
+        "sampleid": controller_sampleID.text,
+        /*"img_file":
+            await MultipartFile.fromFile(UploadFilePath!, filename: fileName),*/
+      });
 
-    final response = await dio
-        .post('http://cls-pae-fp60088/webapi/Home/Privacy', data: formData);
+      final response = await dio.post(
+          'http://CLS-PAE-FP60088:81/webapi/Home/Privacy',
+          data: formData);
 
-    //final response = await dio.get('http://cls-pae-fp60088/webapi/Home/Privacy');
+      FTPConnect ftpConnect = new FTPConnect("CLS-PAE-FP60088",
+          user: "support.jk", pass: "Dellpro.1903", port: 21);
+      await ftpConnect.connect();
+      // await ftpConnect.changeDirectory("webapi");
+      await ftpConnect.uploadFile(File(UploadFilePath!));
+      await ftpConnect.disconnect();
 
-    print(response.data);
-
-    /*return (json.decode(response.body)['data'] as List)
+      /*return (json.decode(response.body)['data'] as List)
         .map((e) => SampleEntryModel.fromJson(e))
         .toList();*/
+    } catch (e) {
+      print(e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, "No network connection found");
+    }
   }
 
 /*_getImage(ImageSource source) async {
@@ -588,7 +566,7 @@ class HomePage extends State<HomePageState> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        showAlertDialog(context, "Back button is disabled");
+        CustomAlertDialog.ShowAlertDialog(context, "Back button is disabled");
         return false;
       },
       child: Form(
@@ -759,8 +737,8 @@ class HomePage extends State<HomePageState> {
                 ),
                 onPressed: () {
                   //_syncData();
-                  //syncImages().getSampleSync();
-                  syncData();
+                  syncImages().syncSampleEntryModel(context);
+                  //syncData();
                 },
               ),
             ),

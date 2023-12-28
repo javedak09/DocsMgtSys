@@ -1,3 +1,4 @@
+import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:docsmgtsys/DBProvider.dart';
 import 'package:docsmgtsys/ProjectController.dart';
@@ -62,7 +63,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     // show the results: print all rows in the db
     print(await db.query("project"));
 
-    showAlertDialog(context, "Record saved successfully");
+    CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
   }
 
   @override
@@ -148,44 +149,16 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
   void _searchSampleID() async {
     final allRows =
-        await ProjectController().getSampleInfo(projectNameController.text);
+    await ProjectController().getSampleInfo(projectNameController.text);
 
     if (allRows.length <= 0) {
-      showAlertDialog(context, "Project does not exist");
+      CustomAlertDialog.ShowAlertDialog(context, "Project does not exist");
       FocusScope.of(context).requestFocus(focusNode);
     } else {
       Database db = await DBProvider().initDb();
       print(await db.query("project"));
       //allRows.forEach((row) => userArray.add(Users.fromMap(row)));
     }
-  }
-
-  showAlertDialog(BuildContext context, String msg) {
-    // set up the buttons
-    Widget okButton = TextButton(
-      child: Text("OK"),
-      onPressed: () {
-        _clearField();
-        Navigator.of(context, rootNavigator: true).pop();
-      },
-    );
-
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Alert Dialog"),
-      content: Text(msg),
-      actions: [
-        okButton,
-      ],
-    );
-
-    // show the dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
   }
 
   void _clearField() {

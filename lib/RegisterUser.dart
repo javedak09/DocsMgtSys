@@ -1,3 +1,4 @@
+import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:docsmgtsys/DBProvider.dart';
 import 'package:docsmgtsys/login.dart';
@@ -156,35 +157,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     // show the results: print all rows in the db
     print(await db.query("users"));
 
-    showAlertDialog(context);
-  }
-
-  showAlertDialog(BuildContext context) {
-    // set up the buttons
-    Widget okButton = TextButton(
-      child: Text("OK"),
-      onPressed: () {
-        _clearField();
-        Navigator.of(context, rootNavigator: true).pop();
-      },
-    );
-
-    // set up the AlertDialog
-    AlertDialog alert = AlertDialog(
-      title: Text("Alert Dialog"),
-      content: Text("Record saved successfully"),
-      actions: [
-        okButton,
-      ],
-    );
-
-    // show the dialog
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return alert;
-      },
-    );
+    CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
   }
 
   _clearField() async {
