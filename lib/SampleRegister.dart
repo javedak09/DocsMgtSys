@@ -11,13 +11,14 @@ import 'package:docsmgtsys/ProjectEntry.dart';
 import 'package:docsmgtsys/SampleController.dart';
 import 'package:docsmgtsys/SearchSample.dart';
 import 'package:docsmgtsys/login.dart';
-import 'package:docsmgtsys/syncImages.dart';
+import 'package:docsmgtsys/syncronizationWork.dart';
 import 'package:ftpconnect/ftpconnect.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'CustomAlertDialog.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 /*void main() {
   runApp(MyApp());
@@ -92,29 +93,48 @@ class HomePage extends State<HomePageState> {
     if (this.formKey.currentState!.validate()) {
       _insert();
       saveFilePermanently();
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => SampleRegister()));
     }
     //formKey.currentState.save();
   }
 
   _insert() async {
-    // get a reference to the database
-    // because this is an expensive operation we use async and await
-    Database db = await DBProvider().initDb();
+    try {
+      // get a reference to the database
+      // because this is an expensive operation we use async and await
+      Database db = await DBProvider().initDb();
 
-    // row to insert
-    Map<String, dynamic> row = {
-      "projectid": controller_projectID.text,
-      "sampleid": controller_sampleID.text
-    };
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      var mydev = androidInfo.device;
 
-    // do the insert and get the id of the inserted row
-    int id = await db.insert("sampleentry", row);
+      // row to insert
+      Map<String, dynamic> row = {
+        "projectid": controller_projectID.text,
+        "sampleid": controller_sampleID.text,
+        "issynced": "0",
+      };
 
-    // show the results: print all rows in the db
-    print(await db.query("sampleentry"));
+      // do the insert and get the id of the inserted row
+      int id = await db.insert("sampleentry", row);
 
-    //showAlertDialog(context, "Record saved successfully");
-    CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
+      Map<String, dynamic> row_img = {
+        "projectid": controller_projectID.text,
+        "sampleid": controller_sampleID.text,
+        "sampleentryid": id,
+        "filesname": controller_imgpath.text,
+        "issynced": "0",
+      };
+
+      id = await db.insert("files", row_img);
+
+      // show the results: print all rows in the db
+      //print(await db.query("sampleentry"));
+    } catch (e) {
+      print(e.toString());
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
+    }
   }
 
   _getData() async {
@@ -149,7 +169,7 @@ class HomePage extends State<HomePageState> {
             Text(title, style: TextStyle(color: Colors.white, fontSize: 20)));
   }
 
-  void _clearField() {
+  void _clearField() async {
     formKey.currentState!.reset();
     controller_projectID.text = "";
     controller_sampleID.text = "";
@@ -217,14 +237,31 @@ class HomePage extends State<HomePageState> {
               " - " +
               fileToDisplay!.path);
 
+          File(pickedFile!.path!).copySync(appDocDirFolder.path + arr1[7]);
+
+          /*print(pickedFile_new!.path! +
+              " - " +
+              appDocDirFolder.path +
+              ext![1] +
+              " - " +
+              fileToDisplay!.path);
+
           File(pickedFile!.path!).copySync(appDocDirFolder.path +
               controller_projectID.text +
               "_" +
               controller_sampleID.text +
               "." +
-              ext[1]);
+              ext[1]);*/
         } else {
           print(pickedFile_new!.path! +
+              " - " +
+              appDocDirFolder.path +
+              " - " +
+              fileToDisplay!.path);
+
+          File(pickedFile!.path!).copySync(appDocDirFolder.path + arr1[7]);
+
+          /*print(pickedFile_new!.path! +
               " - " +
               appDocDirFolder.path +
               " - " +
@@ -233,7 +270,7 @@ class HomePage extends State<HomePageState> {
           File(pickedFile!.path!).copySync(appDocDirFolder.path +
               controller_projectID.text +
               "_" +
-              controller_sampleID.text);
+              controller_sampleID.text);*/
         }
 
         UploadFilePath = appDocDirFolder.path +
@@ -243,7 +280,7 @@ class HomePage extends State<HomePageState> {
             "." +
             ext[1];
 
-        syncData();
+        CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
 
         //fileToDisplay!.copySync(appDocDirFolder.path + controller_imgpath.text);
 
@@ -345,7 +382,50 @@ class HomePage extends State<HomePageState> {
           fileToDisplay = File(pickedFile_new!.path.toString());
 
           var arr = fileToDisplay!.path.split("/");
+          var ext;
 
+          if (arr[7].indexOf('.') != -1) {
+            ext = arr[7].split('.');
+
+            var dir = await getExternalStorageDirectory();
+            var arr_dir = dir!.path.split('/');
+
+            fileToDisplay_new = File(arr_dir[0] +
+                "/" +
+                arr_dir[1] +
+                "/" +
+                arr_dir[2] +
+                "/" +
+                arr_dir[3] +
+                "/DCIM/" +
+                controller_projectID.text +
+                "/" +
+                arr_dir[7]);
+
+            controller_imgpath.text = arr[7];
+          } else {
+            controller_imgpath.text =
+                controller_projectID.text + "_" + controller_sampleID.text;
+
+            var dir = await getExternalStorageDirectory();
+            var arr_dir = dir!.path.split('/');
+
+            fileToDisplay_new = File(arr_dir[0] +
+                "/" +
+                arr_dir[1] +
+                "/" +
+                arr_dir[2] +
+                "/" +
+                arr_dir[3] +
+                "/DCIM/" +
+                controller_projectID.text +
+                "/" +
+                arr_dir[7]);
+          }
+
+          /*             renaming module start             */
+
+          /*var arr = fileToDisplay!.path.split("/");
           var ext;
 
           if (arr[7].indexOf('.') != -1) {
@@ -395,7 +475,9 @@ class HomePage extends State<HomePageState> {
                 controller_projectID.text +
                 "_" +
                 controller_sampleID.text);
-          }
+          }*/
+
+          /*             renaming module end             */
         } else {
           // User canceled the picker
         }
@@ -522,11 +604,10 @@ class HomePage extends State<HomePageState> {
             await MultipartFile.fromFile(UploadFilePath!, filename: fileName),*/
       });
 
-      final response = await dio.post(
-          'http://CLS-PAE-FP60088:81/webapi/Home/Privacy',
-          data: formData);
+      final response = await dio
+          .post('http://CLS-PAE-FL73255/webapi/Home/Privacy', data: formData);
 
-      FTPConnect ftpConnect = new FTPConnect("CLS-PAE-FP60088",
+      FTPConnect ftpConnect = new FTPConnect("CLS-PAE-FL73255",
           user: "support.jk", pass: "Dellpro.1903", port: 21);
       await ftpConnect.connect();
       // await ftpConnect.changeDirectory("webapi");
@@ -538,7 +619,6 @@ class HomePage extends State<HomePageState> {
         .toList();*/
     } catch (e) {
       print(e.toString());
-      CustomAlertDialog.ShowAlertDialog(context, "No network connection found");
     }
   }
 
@@ -737,7 +817,7 @@ class HomePage extends State<HomePageState> {
                 ),
                 onPressed: () {
                   //_syncData();
-                  syncImages().syncSampleEntryModel(context);
+                  synchronizationWork().syncSampleEntryModel(context);
                   //syncData();
                 },
               ),

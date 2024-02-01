@@ -11,7 +11,7 @@ import 'package:docsmgtsys/ProjectEntry.dart';
 import 'package:docsmgtsys/SampleController.dart';
 import 'package:docsmgtsys/SearchSample.dart';
 import 'package:docsmgtsys/login.dart';
-import 'package:docsmgtsys/syncImages.dart';
+import 'package:docsmgtsys/syncronizationWork.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as Path;
@@ -555,7 +555,6 @@ class HomePage extends State<HomePageState> {
                 ),
                 onPressed: () {
                   //_syncData();
-                  syncImages().getHttp();
                 },
               ),
             ),

@@ -41,10 +41,18 @@ class DBProvider {
         "userstatus TEXT"
         ");");
 
+    await db.execute("CREATE TABLE IF NOT EXISTS userslog ("
+        "id INTEGER PRIMARY KEY,"
+        "userid TEXT,"
+        "entrydate TEXT"
+        ");");
+
     await db.execute("CREATE TABLE IF NOT EXISTS sampleentry ("
         "id INTEGER PRIMARY KEY,"
+        "tabdataid TEXT,"
         "projectid TEXT,"
-        "sampleid TEXT"
+        "sampleid TEXT,"
+        "issynced TEXT"
         ");");
 
     await db.execute("CREATE TABLE IF NOT EXISTS files ("
@@ -52,7 +60,8 @@ class DBProvider {
         "projectid TEXT,"
         "sampleid TEXT,"
         "sampleentryid TEXT,"
-        "fname TEXT"
+        "filesname TEXT,"
+        "issynced TEXT"
         ");");
 
     await db.execute("CREATE TABLE IF NOT EXISTS project ("

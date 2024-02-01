@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:docsmgtsys/CustomAlertDialog.dart';
+import 'package:docsmgtsys/syncronizationWork.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:docsmgtsys/CVars.dart';
@@ -8,6 +11,7 @@ import 'package:docsmgtsys/RegisterUser.dart';
 import 'package:docsmgtsys/SampleController.dart';
 import 'package:docsmgtsys/SampleRegister.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'dart:async';
 
 void main() {
@@ -91,7 +95,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     print(await db.query("users"));
   }
 
-  saveUserRole(CVars cvars) async {
+  saveUserRole(GlobalVariables cvars) async {
     controller_userrole.text = cvars.userRole!;
   }
 
@@ -223,6 +227,11 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     }
   }
 
+  void _login_windows() async {
+    print("i m login windows");
+    synchronizationWork().loginUser(context,
+        userid: nameController.text, passwd: passwordController.text);
+  }
 
   void _clearField() {
     nameController.text = "";
@@ -233,7 +242,11 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   void _submit() {
     if (this.formKey.currentState!.validate()) {
       formKey.currentState!.save();
-      _login();
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        _login();
+      } else {
+        _login_windows();
+      }
     }
   }
 

@@ -64,6 +64,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
     print(await db.query("project"));
 
     CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
+    projectNameController.clear();
   }
 
   @override
@@ -149,7 +150,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
   void _searchSampleID() async {
     final allRows =
-    await ProjectController().getSampleInfo(projectNameController.text);
+        await ProjectController().getSampleInfo(projectNameController.text);
 
     if (allRows.length <= 0) {
       CustomAlertDialog.ShowAlertDialog(context, "Project does not exist");
