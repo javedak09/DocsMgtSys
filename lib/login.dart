@@ -228,7 +228,6 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   }
 
   void _login_windows() async {
-    print("i m login windows");
     synchronizationWork().loginUser(context,
         userid: nameController.text, passwd: passwordController.text);
   }

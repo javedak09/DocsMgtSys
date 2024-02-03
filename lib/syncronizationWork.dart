@@ -114,6 +114,8 @@ class synchronizationWork {
       var response = Dio().post(
           GlobalVariables().SERVER_URL! + "webapi/Login/Authenticate",
           data: formData);
+
+      print(response);
     } catch (e) {
       CustomAlertDialog.ShowAlertDialog(context, e.toString());
     }
