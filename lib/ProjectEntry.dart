@@ -1,9 +1,11 @@
 import 'package:docsmgtsys/CustomAlertDialog.dart';
+import 'package:docsmgtsys/syncronizationWork.dart';
 import 'package:flutter/material.dart';
 import 'package:docsmgtsys/DBProvider.dart';
 import 'package:docsmgtsys/ProjectController.dart';
 import 'package:docsmgtsys/SampleRegister.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 
 class ProjectEntry extends StatelessWidget {
   const ProjectEntry({Key? key}) : super(key: key);
@@ -169,7 +171,13 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
   void _submit() {
     if (this.formKey.currentState!.validate()) {
-      _insert();
+      this.formKey.currentState!.save();
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        _insert();
+      } else {
+        synchronizationWork()
+            .AddProject(context, projectname: projectNameController.text);
+      }
     }
   }
 }

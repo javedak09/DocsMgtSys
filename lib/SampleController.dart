@@ -1,3 +1,4 @@
+import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:docsmgtsys/Model/SampleEntryModel.dart';
 import 'dart:async';
 import 'package:docsmgtsys/DBProvider.dart';
@@ -41,5 +42,18 @@ class SampleController {
     }
     print(users.length);
     return users;
+  }
+
+  Future<int> updateSyncedColumn() async {
+    int res = 0;
+    try {
+      var dbClient = await con.db;
+      res = await dbClient!.rawUpdate(
+          "update sampleentry set issynced = 1 where issynced is null or issynced='' or issynced='0'");
+
+      res = await dbClient.rawUpdate(
+          "update files set issynced = 1 where issynced is null or issynced='' or issynced='0'");
+    } catch (e) {}
+    return res;
   }
 }
