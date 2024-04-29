@@ -1,115 +1,330 @@
+import 'dart:io';
+
+import 'package:docsmgtsys/CustomAlertDialog.dart';
+import 'package:docsmgtsys/Model/ProjectModel.dart';
+import 'package:docsmgtsys/syncronizationWork.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:docsmgtsys/CVars.dart';
+import 'package:docsmgtsys/DBProvider.dart';
+import 'package:docsmgtsys/LoginController.dart';
+import 'package:docsmgtsys/RegisterUser.dart';
+import 'package:docsmgtsys/SampleController.dart';
+import 'package:docsmgtsys/SampleRegister.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'dart:async';
 
 void main() {
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
-  // This widget is the root of your application.
+  static const String _title = 'Docs Management System';
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // Try running your application with "flutter run". You'll see the
-        // application has a blue toolbar. Then, without quitting the app, try
-        // changing the primarySwatch below to Colors.green and then invoke
-        // "hot reload" (press "r" in the console where you ran "flutter run",
-        // or simply save your changes to "hot reload" in a Flutter IDE).
-        // Notice that the counter didn't reset back to zero; the application
-        // is not restarted.
-        primarySwatch: Colors.blue,
+      title: _title,
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(title: const Text(_title)),
+        bottomNavigationBar: BottomAppBar(
+          shape: const CircularNotchedRectangle(),
+          color: const Color.fromRGBO(140, 160, 210, 1.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              IconButton(
+                  onPressed: () {},
+                  icon: const Icon(Icons.data_exploration,
+                      color: Color.fromRGBO(43, 217, 210, 1.0))),
+              IconButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed("/RegisterUser");
+                },
+                icon: const Icon(
+                  Icons.supervised_user_circle_sharp,
+                  color: Color.fromRGBO(160, 80, 211, 1.0),
+                ),
+              )
+            ],
+          ),
+        ),
+        body: const MyStatefulWidget(),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class MyStatefulWidget extends StatefulWidget {
+  const MyStatefulWidget({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyStatefulWidgetState createState() => new _MyStatefulWidgetState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class SecondRoute extends StatelessWidget {
+  const SecondRoute({Key? key}) : super(key: key);
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Register User'),
+      ),
+      body: Center(
+        child: ElevatedButton(
+          onPressed: () async {
+            Database? db = await DBProvider.internal().db;
+            db?.rawInsert(
+                "INSERT INTO users (userid, passwd) VALUES('user1', 'user1')");
+
+            Navigator.pop(context);
+          },
+          child: const Text('Go back!'),
+        ),
+      ),
+    );
+  }
+}
+
+class _MyStatefulWidgetState extends State<MyStatefulWidget> {
+  TextEditingController nameController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController controller_userrole = TextEditingController();
+
+  final scaffoldKey = GlobalKey<ScaffoldState>();
+  final formKey = GlobalKey<FormState>();
+  String btnText = "";
+
+  var focusNode = FocusNode();
+
+  List<String> lst_users = ["User", "Admin"];
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  _showUsers() async {
+    // get a reference to the database
+    // because this is an expensive operation we use async and await
+    Database db = await DBProvider().initDb();
+
+    // show the results: print all rows in the db
+    print(await db.query("users"));
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+    return Form(
+      key: formKey,
+      child: ListView(
+        children: <Widget>[
+          Container(
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(10),
+          ),
+          Container(
+              alignment: Alignment.center,
+              padding: const EdgeInsets.all(10),
+              child: const Text(
+                'Sign in',
+                style: TextStyle(fontSize: 20),
+              )),
+          Container(
+            padding: const EdgeInsets.all(10),
+            child: TextFormField(
+              controller: nameController,
+              autofocus: true,
+              focusNode: focusNode,
+              validator: (value) {
+                if (value!.isEmpty)
+                  return "Username required";
+                else
+                  return null;
+              },
+              decoration: const InputDecoration(
+                  border: OutlineInputBorder(), labelText: 'User Name'),
+              style: new TextStyle(fontSize: 20),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 15),
+            child: TextFormField(
+              obscureText: true,
+              controller: passwordController,
+              validator: (value) {
+                if (value!.isEmpty)
+                  return "Password required";
+                else
+                  return null;
+              },
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Password',
+              ),
+              style: new TextStyle(fontSize: 20),
             ),
-          ],
-        ),
+          ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 15),
+            child: DropdownSearch<String>(
+              items: lst_users,
+              mode: Mode.DIALOG,
+              validator: (value) {
+                if (value == null) {
+                  return "User Role required";
+                }
+              },
+              showSearchBox: true,
+            ),
+          ),
+          Container(
+            height: 60,
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            child: ElevatedButton(
+              child: Text(
+                'Login',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: () {
+                //_showUsers();
+                _submit();
+              },
+            ),
+          ),
+          Container(
+            height: 60,
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            child: ElevatedButton(
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: _clearField,
+            ),
+          ),
+          Container(
+            height: 60,
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            child: ElevatedButton(
+              child: Text(
+                'Register',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: () {
+                _registerUser();
+                //_submit();
+              },
+            ),
+          ),
+          Container(
+            height: 60,
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+            child: ElevatedButton(
+              child: Text(
+                'Download Projects',
+                style: TextStyle(fontSize: 20),
+              ),
+              onPressed: () {
+                downloadProjects();
+                //_submit();
+              },
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+
+  downloadProjects() async {
+    Future<List> lst_future = synchronizationWork().getProjectData(context);
+    List<ProjectModel> lst = await lst_future as List<ProjectModel>;
+    _insert(lst);
+  }
+
+  _insert(List<ProjectModel> projname) async {
+    // get a reference to the database
+    // because this is an expensive operation we use async and await
+    Database db = await DBProvider().initDb();
+    List<Map<String, dynamic>> projmodel = await db.query("project");
+
+    /*CustomAlertDialog.ShowAlertDialog(
+        context, "${projname}" + " - " + "${projmodel}");*/
+
+    for (var e in projmodel) {
+      if (e.values == projname) {
+        // row to insert
+        Map<String, dynamic> row = {"projectname": projname};
+        // do the insert and get the id of the inserted row
+        //int id = await db.insert("project", row);
+      }
+    }
+
+    projmodel = [];
+
+    // show the results: print all rows in the db
+    projmodel = await db.query("project");
+    print("${"I am project - projmodel"}");
+
+    CustomAlertDialog.ShowAlertDialog(
+        context, "Projects downloaded successfully");
+  }
+
+  _registerUser() {
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => RegisterUser()));
+  }
+
+  void _login() async {
+    final allRows = await LoginController()
+        .getLogin(nameController.text, passwordController.text);
+
+    if (allRows.length <= 0) {
+      CustomAlertDialog.ShowAlertDialog(context, "User does not exist");
+      FocusScope.of(context).requestFocus(focusNode);
+    } else {
+      GlobalVariables.ENTRY_USER_ID = nameController.text;
+      GlobalVariables.userRole = controller_userrole.text;
+
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => SampleRegister()));
+      //allRows.forEach((row) => userArray.add(Users.fromMap(row)));
+    }
+  }
+
+  void _login_windows() async {
+    setState(() {
+      GlobalVariables.ENTRY_USER_ID = nameController.text;
+      GlobalVariables.userRole = controller_userrole.text;
+    });
+
+    synchronizationWork().loginUser_Windows(context,
+        userid: nameController.text, passwd: passwordController.text);
+  }
+
+  void _clearField() {
+    nameController.text = "";
+    passwordController.text = "";
+    formKey.currentState!.reset();
+  }
+
+  void _submit() {
+    if (this.formKey.currentState!.validate()) {
+      formKey.currentState!.save();
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        _login();
+      } else {
+        _login_windows();
+      }
+    }
+  }
+
+  changeText(String txt) {
+    txt = "werwe";
   }
 }

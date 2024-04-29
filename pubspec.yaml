@@ -34,14 +34,17 @@ dependencies:
   sqflite: ^2.2.4
   image_picker: ^0.8.2
   http: any
-  path_provider: ^2.0.12
+  path_provider: any
   dio: any
   dropdown_search: ^2.0.0
   file_picker: 4.4.0
   filesize: ^2.0.1
   http_parser: 4.0.2
-  ftpconnect: ^2.0.0
+  ftpconnect: ^1.0.1
   device_info_plus: ^4.0.0
+  menu_bar: ^0.4.0
+  intl: ^0.17.0
+  flutter_cors: 1.4.0
 
 
   # The following adds the Cupertino Icons font to your application.

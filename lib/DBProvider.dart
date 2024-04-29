@@ -52,6 +52,8 @@ class DBProvider {
         "tabdataid TEXT,"
         "projectid TEXT,"
         "sampleid TEXT,"
+        "userid TEXT,"
+        "entrydate TEXT,"
         "issynced TEXT"
         ");");
 

@@ -175,8 +175,8 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
       if (defaultTargetPlatform == TargetPlatform.android) {
         _insert();
       } else {
-        synchronizationWork()
-            .AddProject(context, projectname: projectNameController.text);
+        synchronizationWork().AddProject_Windows(context,
+            projectname: projectNameController.text);
       }
     }
   }

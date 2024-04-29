@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:docsmgtsys/CVars.dart';
 import 'package:docsmgtsys/ViewFiles.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,15 +11,17 @@ import 'package:docsmgtsys/ProjectController.dart';
 import 'package:docsmgtsys/ProjectEntry.dart';
 import 'package:docsmgtsys/SampleController.dart';
 import 'package:docsmgtsys/SearchSample.dart';
-import 'package:docsmgtsys/login.dart';
+import 'package:docsmgtsys/main.dart';
 import 'package:docsmgtsys/syncronizationWork.dart';
 import 'package:ftpconnect/ftpconnect.dart';
+import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'CustomAlertDialog.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 
 /*void main() {
   runApp(MyApp());
@@ -81,7 +84,20 @@ class HomePage extends State<HomePageState> {
   @override
   void initState() {
     super.initState();
-    _getProjectData();
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      _getProjectData();
+    } else {
+      _getProject_Windows();
+    }
+  }
+
+  _getProject_Windows() async {
+    Future<List> lst_future = synchronizationWork().getProjectData(context);
+    List<ProjectModel> lst = await lst_future as List<ProjectModel>;
+    setState(() {
+      lst_project = lst!;
+    });
   }
 
   /*void _handleURLButtonPress(BuildContext context, var type) {
@@ -91,12 +107,21 @@ class HomePage extends State<HomePageState> {
 
   void _submit() {
     if (this.formKey.currentState!.validate()) {
-      _insert();
-      saveFilePermanently();
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => SampleRegister()));
+      formKey.currentState!.save();
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        _insert();
+        saveFilePermanently();
+        Navigator.push(
+            context, MaterialPageRoute(builder: (context) => SampleRegister()));
+      } else {
+        AddSampleEntry_Windows();
+      }
     }
-    //formKey.currentState.save();
+  }
+
+  AddSampleEntry_Windows() {
+    synchronizationWork().AddSample_Windows(context, controller_projectID.text,
+        controller_sampleID.text, controller_imgpath.text);
   }
 
   _insert() async {
@@ -113,6 +138,8 @@ class HomePage extends State<HomePageState> {
       Map<String, dynamic> row = {
         "projectid": controller_projectID.text,
         "sampleid": controller_sampleID.text,
+        "userid": GlobalVariables.ENTRY_USER_ID,
+        "entrydate": DateFormat("dd-MM-yyyy HH:mm:ss").format(DateTime.now()),
         "issynced": "0",
       };
 
@@ -201,45 +228,44 @@ class HomePage extends State<HomePageState> {
 
   Future saveFilePermanently() async {
     try {
-      if (Platform.isAndroid) {
-        final Directory? appDocDir = await getExternalStorageDirectory();
+      final Directory? appDocDir = await getExternalStorageDirectory();
 
-        var arr = appDocDir!.path.split('/');
+      var arr = appDocDir!.path.split('/');
 
-        Directory? appDocDirFolder = Directory(arr[0] +
-            "/" +
-            arr[1] +
-            "/" +
-            arr[2] +
-            "/" +
-            arr[3] +
-            '/DCIM/docsmgtsys/${controller_projectID.text}/');
+      Directory? appDocDirFolder = Directory(arr[0] +
+          "/" +
+          arr[1] +
+          "/" +
+          arr[2] +
+          "/" +
+          arr[3] +
+          '/DCIM/docsmgtsys/${controller_projectID.text}/');
 
-        var arr1 = pickedFile!.path!.split('/');
+      var arr1 = pickedFile!.path!.split('/');
 
-        if (await appDocDirFolder.exists()) {
-          //if folder already exists return path
-        } else {
-          //if folder not exists create folder and then return its path
+      if (await appDocDirFolder.exists()) {
+        //if folder already exists return path
+      } else {
+        //if folder not exists create folder and then return its path
 
-          //final Directory _appDocDirNewFolder = await _appDocDirFolder.create(recursive: true);
-          appDocDirFolder = await appDocDirFolder.create(recursive: true);
-        }
+        //final Directory _appDocDirNewFolder = await _appDocDirFolder.create(recursive: true);
+        appDocDirFolder = await appDocDirFolder.create(recursive: true);
+      }
 
-        var ext;
-        if (arr1[7].indexOf('.') != -1) {
-          ext = arr1[7].split('.');
+      var ext;
+      if (arr1[7].indexOf('.') != -1) {
+        ext = arr1[7].split('.');
 
-          print(pickedFile_new!.path! +
-              " - " +
-              appDocDirFolder.path +
-              ext![1] +
-              " - " +
-              fileToDisplay!.path);
+        print(pickedFile_new!.path! +
+            " - " +
+            appDocDirFolder.path +
+            ext![1] +
+            " - " +
+            fileToDisplay!.path);
 
-          File(pickedFile!.path!).copySync(appDocDirFolder.path + arr1[7]);
+        File(pickedFile!.path!).copySync(appDocDirFolder.path + arr1[7]);
 
-          /*print(pickedFile_new!.path! +
+        /*print(pickedFile_new!.path! +
               " - " +
               appDocDirFolder.path +
               ext![1] +
@@ -252,16 +278,16 @@ class HomePage extends State<HomePageState> {
               controller_sampleID.text +
               "." +
               ext[1]);*/
-        } else {
-          print(pickedFile_new!.path! +
-              " - " +
-              appDocDirFolder.path +
-              " - " +
-              fileToDisplay!.path);
+      } else {
+        print(pickedFile_new!.path! +
+            " - " +
+            appDocDirFolder.path +
+            " - " +
+            fileToDisplay!.path);
 
-          File(pickedFile!.path!).copySync(appDocDirFolder.path + arr1[7]);
+        File(pickedFile!.path!).copySync(appDocDirFolder.path + arr1[7]);
 
-          /*print(pickedFile_new!.path! +
+        /*print(pickedFile_new!.path! +
               " - " +
               appDocDirFolder.path +
               " - " +
@@ -271,25 +297,25 @@ class HomePage extends State<HomePageState> {
               controller_projectID.text +
               "_" +
               controller_sampleID.text);*/
-        }
+      }
 
-        UploadFilePath = appDocDirFolder.path +
-            controller_projectID.text +
-            "_" +
-            controller_sampleID.text +
-            "." +
-            ext[1];
+      UploadFilePath = appDocDirFolder.path +
+          controller_projectID.text +
+          "_" +
+          controller_sampleID.text +
+          "." +
+          ext[1];
 
-        CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
+      CustomAlertDialog.ShowAlertDialog(context, "Record saved successfully");
 
-        //fileToDisplay!.copySync(appDocDirFolder.path + controller_imgpath.text);
+      //fileToDisplay!.copySync(appDocDirFolder.path + controller_imgpath.text);
 
-        //final file = await File(pickedFile.path + '/Traders/Report').create(recursive: true);
-        //file.writeAsStringSync("Hello I'm writting a stackoverflow answer into you");
+      //final file = await File(pickedFile.path + '/Traders/Report').create(recursive: true);
+      //file.writeAsStringSync("Hello I'm writting a stackoverflow answer into you");
 
-        //newFile.copySync(_appDocDirFolder.path + arr[7]);
+      //newFile.copySync(_appDocDirFolder.path + arr[7]);
 
-        /*String outputFile = await FilePicker.platform.saveFile(
+      /*String outputFile = await FilePicker.platform.saveFile(
           dialogTitle: 'Please select an output file:',
           fileName: controller_imgpath.text,
         );
@@ -297,7 +323,6 @@ class HomePage extends State<HomePageState> {
         if (outputFile == null) {
           // User canceled the picker
         }*/
-      } else {}
     } catch (e) {
       CustomAlertDialog.ShowAlertDialog(context, e.toString());
       print(e.toString());
@@ -306,40 +331,39 @@ class HomePage extends State<HomePageState> {
 
   Future saveFilePermanently_working() async {
     try {
-      if (Platform.isAndroid) {
-        final Directory? appDocDir = await getExternalStorageDirectory();
+      final Directory? appDocDir = await getExternalStorageDirectory();
 
-        Directory? appDocDirFolder = Directory(
-            '${appDocDir!.path}/DCIM/docsmgtsys/${controller_projectID.text}/');
+      Directory? appDocDirFolder = Directory(
+          '${appDocDir!.path}/DCIM/docsmgtsys/${controller_projectID.text}/');
 
-        if (await appDocDirFolder.exists()) {
-          //if folder already exists return path
-        } else {
-          //if folder not exists create folder and then return its path
+      if (await appDocDirFolder.exists()) {
+        //if folder already exists return path
+      } else {
+        //if folder not exists create folder and then return its path
 
-          //final Directory _appDocDirNewFolder = await _appDocDirFolder.create(recursive: true);
-          appDocDirFolder = await appDocDirFolder.create(recursive: true);
-        }
+        //final Directory _appDocDirNewFolder = await _appDocDirFolder.create(recursive: true);
+        appDocDirFolder = await appDocDirFolder.create(recursive: true);
+      }
 
-        var arr = pickedFile?.path!.split('/');
+      var arr = pickedFile?.path!.split('/');
 
-        print(pickedFile!.path! +
-            " - " +
-            appDocDirFolder.path +
-            arr![7] +
-            " - " +
-            fileToDisplay!.path);
+      print(pickedFile!.path! +
+          " - " +
+          appDocDirFolder.path +
+          arr![7] +
+          " - " +
+          fileToDisplay!.path);
 
-        //File(pickedFile!.path!).copySync(appDocDirFolder.path + fileName!);
+      //File(pickedFile!.path!).copySync(appDocDirFolder.path + fileName!);
 
-        fileToDisplay!.copySync(appDocDirFolder.path + fileName!);
+      fileToDisplay!.copySync(appDocDirFolder.path + fileName!);
 
-        //final file = await File(pickedFile.path + '/Traders/Report').create(recursive: true);
-        //file.writeAsStringSync("Hello I'm writting a stackoverflow answer into you");
+      //final file = await File(pickedFile.path + '/Traders/Report').create(recursive: true);
+      //file.writeAsStringSync("Hello I'm writting a stackoverflow answer into you");
 
-        //newFile.copySync(_appDocDirFolder.path + arr[7]);
+      //newFile.copySync(_appDocDirFolder.path + arr[7]);
 
-        /*String outputFile = await FilePicker.platform.saveFile(
+      /*String outputFile = await FilePicker.platform.saveFile(
           dialogTitle: 'Please select an output file:',
           fileName: controller_imgpath.text,
         );
@@ -347,7 +371,6 @@ class HomePage extends State<HomePageState> {
         if (outputFile == null) {
           // User canceled the picker
         }*/
-      }
     } catch (e) {
       CustomAlertDialog.ShowAlertDialog(context, e.toString());
       print(e.toString());
@@ -356,76 +379,75 @@ class HomePage extends State<HomePageState> {
 
   Future getDocs_Gallery() async {
     try {
-      if (Platform.isAndroid) {
-        result = await FilePicker.platform.pickFiles(
-            type: FileType.custom,
-            allowMultiple: false,
-            allowedExtensions: [
-              "jpg",
-              "jpeg",
-              "png",
-              "doc",
-              "docx",
-              "xls",
-              "xlsx",
-              "mp4",
-              "mp3",
-              "avi",
-              "pdf",
-              "txt"
-            ]);
+      result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowMultiple: false,
+          allowedExtensions: [
+            "jpg",
+            "jpeg",
+            "png",
+            "doc",
+            "docx",
+            "xls",
+            "xlsx",
+            "mp4",
+            "mp3",
+            "avi",
+            "pdf",
+            "txt"
+          ]);
 
-        if (result != null) {
-          fileName = result!.files.first.name;
-          pickedFile = result!.files.first;
-          pickedFile_new = result!.files.first;
-          fileToDisplay = File(pickedFile_new!.path.toString());
+      if (result != null) {
+        fileName = result!.files.first.name;
+        pickedFile = result!.files.first;
+        pickedFile_new = result!.files.first;
+        fileToDisplay = File(pickedFile_new!.path.toString());
 
-          var arr = fileToDisplay!.path.split("/");
-          var ext;
+        var arr = fileToDisplay!.path.split("/");
+        var ext;
 
-          if (arr[7].indexOf('.') != -1) {
-            ext = arr[7].split('.');
+        if (arr[7].indexOf('.') != -1) {
+          ext = arr[7].split('.');
 
-            var dir = await getExternalStorageDirectory();
-            var arr_dir = dir!.path.split('/');
+          var dir = await getExternalStorageDirectory();
+          var arr_dir = dir!.path.split('/');
 
-            fileToDisplay_new = File(arr_dir[0] +
-                "/" +
-                arr_dir[1] +
-                "/" +
-                arr_dir[2] +
-                "/" +
-                arr_dir[3] +
-                "/DCIM/" +
-                controller_projectID.text +
-                "/" +
-                arr_dir[7]);
+          fileToDisplay_new = File(arr_dir[0] +
+              "/" +
+              arr_dir[1] +
+              "/" +
+              arr_dir[2] +
+              "/" +
+              arr_dir[3] +
+              "/DCIM/" +
+              controller_projectID.text +
+              "/" +
+              arr_dir[7]);
 
-            controller_imgpath.text = arr[7];
-          } else {
-            controller_imgpath.text =
-                controller_projectID.text + "_" + controller_sampleID.text;
+          controller_imgpath.text = arr[7];
+        } else {
+          controller_imgpath.text =
+              controller_projectID.text + "_" + controller_sampleID.text;
 
-            var dir = await getExternalStorageDirectory();
-            var arr_dir = dir!.path.split('/');
+          var dir = await getExternalStorageDirectory();
+          var arr_dir = dir!.path.split('/');
 
-            fileToDisplay_new = File(arr_dir[0] +
-                "/" +
-                arr_dir[1] +
-                "/" +
-                arr_dir[2] +
-                "/" +
-                arr_dir[3] +
-                "/DCIM/" +
-                controller_projectID.text +
-                "/" +
-                arr_dir[7]);
-          }
+          fileToDisplay_new = File(arr_dir[0] +
+              "/" +
+              arr_dir[1] +
+              "/" +
+              arr_dir[2] +
+              "/" +
+              arr_dir[3] +
+              "/DCIM/" +
+              controller_projectID.text +
+              "/" +
+              arr_dir[7]);
+        }
 
-          /*             renaming module start             */
+        /*             renaming module start             */
 
-          /*var arr = fileToDisplay!.path.split("/");
+        /*var arr = fileToDisplay!.path.split("/");
           var ext;
 
           if (arr[7].indexOf('.') != -1) {
@@ -477,10 +499,46 @@ class HomePage extends State<HomePageState> {
                 controller_sampleID.text);
           }*/
 
-          /*             renaming module end             */
-        } else {
-          // User canceled the picker
-        }
+        /*             renaming module end             */
+      } else {
+        // User canceled the picker
+      }
+    } catch (e) {
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
+      print(e.toString());
+    }
+  }
+
+  Future getDocs_Gallery_Windows() async {
+    try {
+      result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowMultiple: true,
+          allowedExtensions: [
+            "jpg",
+            "jpeg",
+            "png",
+            "doc",
+            "docx",
+            "xls",
+            "xlsx",
+            "mp4",
+            "mp3",
+            "avi",
+            "pdf",
+            "txt"
+          ]);
+
+      if (result != null) {
+        fileName = result!.files.first.name;
+        pickedFile = result!.files.first;
+        pickedFile_new = result!.files.first;
+        fileToDisplay = File(pickedFile_new!.toString());
+
+        print(pickedFile_new!.name);
+        controller_imgpath.text = pickedFile_new!.name;
+      } else {
+        // User canceled the picker
       }
     } catch (e) {
       CustomAlertDialog.ShowAlertDialog(context, e.toString());
@@ -665,6 +723,13 @@ class HomePage extends State<HomePageState> {
                   style: TextStyle(fontSize: 20),
                 )),
             Container(
+                alignment: Alignment.topRight,
+                padding: const EdgeInsets.all(10),
+                child: Text(
+                  'Welcome: ${GlobalVariables.ENTRY_USER_ID!}',
+                  style: TextStyle(fontSize: 20),
+                )),
+            Container(
               padding: const EdgeInsets.fromLTRB(10, 10, 10, 15),
               child: DropdownSearch<ProjectModel>(
                 items: lst_project,
@@ -725,7 +790,11 @@ class HomePage extends State<HomePageState> {
                   ),
                 ),
                 onPressed: () {
-                  getDocs_Gallery();
+                  if (defaultTargetPlatform == TargetPlatform.android) {
+                    getDocs_Gallery();
+                  } else {
+                    getDocs_Gallery_Windows();
+                  }
                   //_handleURLButtonPress(context, ImageSourceType.gallery);
                 },
               ),

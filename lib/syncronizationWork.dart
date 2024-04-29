@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,12 +6,14 @@ import 'package:dio/dio.dart';
 import 'package:docsmgtsys/CVars.dart';
 import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:docsmgtsys/DBProvider.dart';
+import 'package:docsmgtsys/Model/ProjectModel.dart';
 import 'package:docsmgtsys/Model/SampleEntryModel.dart';
 import 'package:docsmgtsys/SampleController.dart';
 import 'package:docsmgtsys/SampleRegister.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ftpconnect/ftpconnect.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -34,21 +37,17 @@ class synchronizationWork {
             {"sampleEntrymodel": lst, "filesEntryModel": lstFiles});
 
         Response response = await Dio().post(
-            GlobalVariables().SERVER_URL! + "webapi/Home/SyncData",
+            "${GlobalVariables.SERVER_URL!}webapi/Home/SyncData",
             data: formData);
 
         if (response.statusCode == 200) {
-          if (response.data != null) {
-            Map lst_new = response.data;
-            print(lst_new["msg"]);
-          }
           SampleController().updateSyncedColumn();
         } else {
           CustomAlertDialog.ShowAlertDialog(context, "Server error occurred");
         }
       }
 
-      if (lstFiles.length <= 0) {
+      if (lstFiles.length != 0) {
         syncSampleEntryFiles(context);
       }
     } catch (e) {
@@ -93,7 +92,7 @@ class synchronizationWork {
 
       var index = 0;
 
-      ftpConnect = new FTPConnect(GlobalVariables().TESTSERVER_FTP!,
+      ftpConnect = new FTPConnect(GlobalVariables.TESTSERVER_FTP!,
           user: "support.jk", pass: "Dellpro.1904", port: 21);
       await ftpConnect.connect();
 
@@ -116,16 +115,19 @@ class synchronizationWork {
         index++;
       }
 
-      CustomAlertDialog.ShowAlertDialog(context, "Data uploaded on the server");
+      SampleController().updateSyncedColumnFiles();
+
+      CustomAlertDialog.ShowAlertDialog(
+          context, "Files uploaded on the server");
     } catch (e) {
-      print(e.toString());
       CustomAlertDialog.ShowAlertDialog(context, e.toString());
     } finally {
       await ftpConnect?.disconnect();
     }
   }
 
-  loginUser(BuildContext context, {@required userid, @required passwd}) async {
+  loginUser_Windows(BuildContext context,
+      {@required userid, @required passwd}) async {
     try {
       List<Map<String, dynamic>> loginMap = [
         {"userid": userid, "passwd": passwd}
@@ -133,9 +135,22 @@ class synchronizationWork {
 
       var formData = FormData.fromMap({"loginModel": loginMap});
 
-      Response response = await Dio().post(
-          GlobalVariables().SERVER_URL! + "webapi/Login/Authenticate",
-          data: formData);
+      Response response = await Dio()
+          .post("${GlobalVariables.SERVER_URL!}webapi/Login/Authenticate",
+              data: formData,
+              options: Options(
+                headers: {
+                  'content-Type': 'application/json',
+                  'Accept': 'application/text',
+                  "Access-Control-Allow-Origin": "*",
+                  // Required for CORS support to work
+                  "Access-Control-Allow-Credentials": true,
+                  // Required for cookies, authorization headers with HTTPS
+                  "Access-Control-Allow-Headers":
+                      "Origin,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,locale",
+                  "Access-Control-Allow-Methods": "POST, OPTIONS",
+                },
+              ));
 
       var lst_response = jsonDecode(response.toString());
 
@@ -152,23 +167,124 @@ class synchronizationWork {
     }
   }
 
-  AddProject(BuildContext context, {@required projectname}) async {
+  AddProject_Windows(BuildContext context, {@required projectname}) async {
     try {
-      List<Map<String, dynamic>> lst = [projectname];
+      List<Map<String, dynamic>> lst = [
+        {"projectname": projectname}
+      ];
 
       var formData = FormData.fromMap({"projModel": lst});
 
-      print("i m new - " + lst.first.values.toString());
+      Response response = await Dio().post(
+        "${GlobalVariables.SERVER_URL!}webapi/Project/AddProject",
+        data: formData,
+        options: Options(
+          headers: {
+            'content-Type': 'application/json',
+            'Accept': 'application/text',
+            "Access-Control-Allow-Origin": "*",
+            // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true,
+            // Required for cookies, authorization headers with HTTPS
+            "Access-Control-Allow-Headers":
+                "Origin,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,locale",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, OPTIONS",
+          },
+        ),
+      );
 
-      print(formData.fields[0].key + " - " + formData.fields[0].value);
+      var lst_response = jsonDecode(response.toString());
 
-      var response = Dio().post(
-          GlobalVariables().getServerURL()! + "webapi/DataSave/AddProject",
-          data: formData);
+      if (lst_response["msg"] != "Record saved successfully") {
+        CustomAlertDialog.ShowAlertDialog(context, lst_response["msg"]);
+      }
 
-      var jsonObject = jsonDecode(response.toString());
+      if (lst_response["msg"] == "Record saved successfully") {
+        CustomAlertDialog.ShowAlertDialog(context, lst_response["msg"]);
+      }
+    } catch (e) {
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
+    }
+  }
 
-      CustomAlertDialog.ShowAlertDialog(context, jsonObject[0]);
+  Future<List<ProjectModel>> getProjectData(BuildContext context) async {
+    var myvar;
+
+    try {
+      Response response = await Dio().get(
+        "${GlobalVariables.SERVER_URL!}webapi/Project/GetProject",
+        options: Options(
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods":
+                "POST, GET, OPTIONS, PUT, DELETE, HEAD",
+            "Access-Control-Allow-Headers":
+                "custId, appId, Origin, Content-Type, Cookie, X-CSRF-TOKEN, Accept, Authorization, X-XSRF-TOKEN, Access-Control-Allow-Origin",
+            "Access-Control-Expose-Headers": "Authorization, authenticated",
+            "Access-Control-Allow-Credentials": "true",
+          },
+        ),
+      );
+
+      myvar = ProjectModel.fromJsonList(response.data);
+    } catch (e) {
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
+    }
+
+    return myvar;
+  }
+
+  AddSample_Windows(BuildContext context, projectid, sampleid, imageurl) async {
+    try {
+      List<Map<String, dynamic>> lst = [
+        {
+          "projectid": projectid,
+          "sampleid": sampleid,
+          "userid": GlobalVariables.ENTRY_USER_ID,
+          "entrydate": DateFormat("dd-MM-yyyy HH:mm:ss").format(DateTime.now()),
+          "plateform": "desktop",
+        }
+      ];
+
+      var formData = FormData.fromMap({"sampleEntryModel": lst});
+
+      Response response = await Dio().post(
+        "${GlobalVariables.SERVER_URL!}webapi/SampleEntry/AddSample_Windows",
+        data: formData,
+        options: Options(
+          headers: {
+            'content-Type': 'application/json',
+            'Accept': 'application/text',
+            "Access-Control-Allow-Origin": "*",
+            // Required for CORS support to work
+            "Access-Control-Allow-Credentials": true,
+            // Required for cookies, authorization headers with HTTPS
+            "Access-Control-Allow-Headers":
+                "Origin,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,locale",
+            "Access-Control-Allow-Methods": "GET, PUT, POST, OPTIONS",
+          },
+        ),
+      );
+
+      var lst_response = jsonDecode(response.toString());
+
+      if (lst_response["msg"] != "Record saved successfully") {
+        CustomAlertDialog.ShowAlertDialog(context, lst_response["msg"]);
+      }
+
+      if (lst_response["msg"] == "Record saved successfully") {
+        CustomAlertDialog.ShowAlertDialog(context, lst_response["msg"]);
+        UploadSampleEntryFiles(context);
+      }
+    } catch (e) {
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
+    }
+  }
+
+  UploadSampleEntryFiles(BuildContext context) async {
+    try {
+      CustomAlertDialog.ShowAlertDialog(
+          context, "Files uploaded on the server");
     } catch (e) {
       CustomAlertDialog.ShowAlertDialog(context, e.toString());
     }

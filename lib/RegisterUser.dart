@@ -1,7 +1,7 @@
 import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:docsmgtsys/DBProvider.dart';
-import 'package:docsmgtsys/login.dart';
+import 'package:docsmgtsys/main.dart';
 import 'package:sqflite/sqflite.dart';
 
 class RegisterUser extends StatelessWidget {
