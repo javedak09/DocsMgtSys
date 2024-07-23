@@ -42,9 +42,9 @@ dependencies:
   http_parser: 4.0.2
   ftpconnect: ^1.0.1
   device_info_plus: ^4.0.0
-  menu_bar: ^0.4.0
   intl: ^0.17.0
   flutter_cors: 1.4.0
+  connectivity_plus: ^2.3.0
 
 
   # The following adds the Cupertino Icons font to your application.

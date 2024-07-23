@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:docsmgtsys/CVars.dart';
 import 'package:docsmgtsys/CustomAlertDialog.dart';
@@ -11,6 +12,7 @@ import 'package:docsmgtsys/Model/SampleEntryModel.dart';
 import 'package:docsmgtsys/SampleController.dart';
 import 'package:docsmgtsys/SampleRegister.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:ftpconnect/ftpconnect.dart';
 import 'package:intl/intl.dart';
@@ -207,13 +209,21 @@ class synchronizationWork {
     }
   }
 
-  Future<List<ProjectModel>> getProjectData(BuildContext context) async {
-    var myvar;
-
+  downloadProject(BuildContext context) async {
     try {
-      Response response = await Dio().get(
-        "${GlobalVariables.SERVER_URL!}webapi/Project/GetProject",
-        options: Options(
+      var conResult = await Connectivity().checkConnectivity();
+
+      if (conResult == ConnectivityResult.none) {
+        CustomAlertDialog.ShowAlertDialog(
+            context, "Please connect your device or enable WIFI");
+      } else {
+        Response response = await Dio().get(
+          "${GlobalVariables.SERVER_URL}api/Project/downloadProject_Json",
+          options: Options(
+            contentType: "application/json",
+            responseType: ResponseType.json,
+          ),
+          /*options: Options(
           headers: {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods":
@@ -223,15 +233,65 @@ class synchronizationWork {
             "Access-Control-Expose-Headers": "Authorization, authenticated",
             "Access-Control-Allow-Credentials": "true",
           },
-        ),
-      );
+        ),*/
+        );
 
-      myvar = ProjectModel.fromJsonList(response.data);
+        List<dynamic> lst = response.data;
+
+        Database db = await DBProvider().initDb();
+        await db.delete("project");
+
+        for (int a = 0; a <= lst.length - 1; a++) {
+          Map<String, dynamic> row = {
+            "id": lst[a]["id"],
+            "projectname": lst[a]["projectname"]
+          };
+          int id = await db.insert("project", row);
+        }
+
+        CustomAlertDialog.ShowAlertDialog(
+            context, "Projects downloaded successfully");
+      }
     } catch (e) {
       CustomAlertDialog.ShowAlertDialog(context, e.toString());
     }
+  }
 
-    return myvar;
+  downloadUsers(BuildContext context) async {
+    try {
+      var conResult = await Connectivity().checkConnectivity();
+
+      if (conResult == ConnectivityResult.none) {
+        CustomAlertDialog.ShowAlertDialog(
+            context, "Please connect your device or enable WIFI");
+      } else {
+        Response response = await Dio().get(
+          "${GlobalVariables.SERVER_URL}api/Project/downloadProject_Json",
+          options: Options(
+            contentType: "application/json",
+            responseType: ResponseType.json,
+          ),
+        );
+
+        List<dynamic> lst = response.data;
+
+        Database db = await DBProvider().initDb();
+        await db.delete("project");
+
+        for (int a = 0; a <= lst.length - 1; a++) {
+          Map<String, dynamic> row = {
+            "id": lst[a]["id"],
+            "projectname": lst[a]["projectname"]
+          };
+          int id = await db.insert("project", row);
+        }
+
+        CustomAlertDialog.ShowAlertDialog(
+            context, "Projects downloaded successfully");
+      }
+    } catch (e) {
+      CustomAlertDialog.ShowAlertDialog(context, e.toString());
+    }
   }
 
   AddSample_Windows(BuildContext context, projectid, sampleid, imageurl) async {

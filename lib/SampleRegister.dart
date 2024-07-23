@@ -93,7 +93,7 @@ class HomePage extends State<HomePageState> {
   }
 
   _getProject_Windows() async {
-    Future<List> lst_future = synchronizationWork().getProjectData(context);
+    Future<List> lst_future = synchronizationWork().downloadProject(context);
     List<ProjectModel> lst = await lst_future as List<ProjectModel>;
     setState(() {
       lst_project = lst!;

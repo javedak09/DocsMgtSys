@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:docsmgtsys/CustomAlertDialog.dart';
 import 'package:docsmgtsys/Model/ProjectModel.dart';
+import 'package:docsmgtsys/ProjectEntry.dart';
 import 'package:docsmgtsys/syncronizationWork.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
@@ -31,28 +32,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(title: const Text(_title)),
-        bottomNavigationBar: BottomAppBar(
-          shape: const CircularNotchedRectangle(),
-          color: const Color.fromRGBO(140, 160, 210, 1.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.data_exploration,
-                      color: Color.fromRGBO(43, 217, 210, 1.0))),
-              IconButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed("/RegisterUser");
-                },
-                icon: const Icon(
-                  Icons.supervised_user_circle_sharp,
-                  color: Color.fromRGBO(160, 80, 211, 1.0),
-                ),
-              )
-            ],
-          ),
-        ),
         body: const MyStatefulWidget(),
       ),
     );
@@ -66,31 +45,6 @@ class MyStatefulWidget extends StatefulWidget {
   _MyStatefulWidgetState createState() => new _MyStatefulWidgetState();
 }
 
-class SecondRoute extends StatelessWidget {
-  const SecondRoute({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register User'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            Database? db = await DBProvider.internal().db;
-            db?.rawInsert(
-                "INSERT INTO users (userid, passwd) VALUES('user1', 'user1')");
-
-            Navigator.pop(context);
-          },
-          child: const Text('Go back!'),
-        ),
-      ),
-    );
-  }
-}
-
 class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   TextEditingController nameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -99,6 +53,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   final scaffoldKey = GlobalKey<ScaffoldState>();
   final formKey = GlobalKey<FormState>();
   String btnText = "";
+  bool isLoading = false;
 
   var focusNode = FocusNode();
 
@@ -129,12 +84,13 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
             padding: const EdgeInsets.all(10),
           ),
           Container(
-              alignment: Alignment.center,
-              padding: const EdgeInsets.all(10),
-              child: const Text(
-                'Sign in',
-                style: TextStyle(fontSize: 20),
-              )),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.all(10),
+            child: const Text(
+              'Sign in',
+              style: TextStyle(fontSize: 20),
+            ),
+          ),
           Container(
             padding: const EdgeInsets.all(10),
             child: TextFormField(
@@ -189,7 +145,9 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
             child: ElevatedButton(
               child: Text(
                 'Login',
-                style: TextStyle(fontSize: 20),
+                style: TextStyle(
+                  fontSize: 20,
+                ),
               ),
               onPressed: () {
                 //_showUsers();
@@ -222,18 +180,29 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
               },
             ),
           ),
+          SizedBox(
+            height: 50,
+          ),
           Container(
-            height: 60,
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-            child: ElevatedButton(
-              child: Text(
-                'Download Projects',
-                style: TextStyle(fontSize: 20),
-              ),
-              onPressed: () {
-                downloadProjects();
-                //_submit();
-              },
+            child: Column(
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.download_for_offline,
+                    color: Color.fromARGB(255, 63, 103, 232),
+                  ),
+                  onPressed: () {
+                    downloadProjects();
+                  },
+                ),
+                Text(
+                  'Download Data',
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 63, 103, 232),
+                    fontSize: 18,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -242,9 +211,10 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   }
 
   downloadProjects() async {
-    Future<List> lst_future = synchronizationWork().getProjectData(context);
+    synchronizationWork().downloadProject(context);
+    /*Future<List> lst_future = synchronizationWork().getProjectData(context);
     List<ProjectModel> lst = await lst_future as List<ProjectModel>;
-    _insert(lst);
+    _insert(lst);*/
   }
 
   _insert(List<ProjectModel> projname) async {
@@ -293,6 +263,7 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
 
       Navigator.push(
           context, MaterialPageRoute(builder: (context) => SampleRegister()));
+
       //allRows.forEach((row) => userArray.add(Users.fromMap(row)));
     }
   }
